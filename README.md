@@ -1,4 +1,4 @@
-# simple-mall：商城学习与二次开发工作区
+# Mall4j Learning Workspace
 
 这是一个用于商城学习、功能验证与本地二次开发的多组件工作区，**不是 Mall4j 官方发布仓库，也不代表 Mall4j 官方立场**。
 
