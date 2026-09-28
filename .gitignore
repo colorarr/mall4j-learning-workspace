@@ -1,0 +1,23 @@
+# Build output and installed dependencies
+**/target/
+**/node_modules/
+**/dist/
+**/.venv/
+**/venv/
+
+# IDE and operating-system files
+**/.idea/
+**/.idea.backup-*/
+**/*.iml
+**/.DS_Store
+
+# Local environment and personal app configuration
+**/.env
+**/.env.*
+!**/.env.example
+**/project.private.config.json
+
+# Logs and local runtime files
+**/*.log
+**/__pycache__/
+**/.pytest_cache/

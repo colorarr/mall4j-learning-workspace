@@ -1,0 +1,40 @@
+spring:
+  application:
+    name: mall-mcp-server
+  cloud:
+    openfeign:
+      client:
+        config:
+          default:
+            connect-timeout: 2000
+            read-timeout: 5000
+            logger-level: basic
+  ai:
+    mcp:
+      server:
+        name: mall-mcp-server
+        version: 0.0.1
+        type: SYNC
+        protocol: STREAMABLE
+        instructions: "提供商城购物车、订单、商品和客服相关工具"
+        capabilities:
+          tool: true
+          resource: false
+          prompt: false
+          completion: false
+        annotation-scanner:
+          enabled: true
+        streamable-http:
+          mcp-endpoint: /mcp
+
+server:
+  port: 18081
+
+mall4j:
+  base-url: ${MALL4J_BASE_URL:http://127.0.0.1:18080}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
