@@ -26,6 +26,13 @@
 
 各组件的运行环境和命令以组件 README、配置文件及上游文档为准。商城前后端的入口和本地 API 地址见 [`front-end/README.md`](front-end/README.md)；后端部署资料见 [`mall4j/README.md`](mall4j/README.md)。不要将个人 `.env`、小程序私有配置、密钥或本机构建产物提交到版本库。
 
+## 在线测试
+
+- 用户端地址：[https://mall.zpzhub.shop](https://mall.zpzhub.shop)
+- 测试账号：用户名 `color`，密码 `123456789`
+
+该账号用于商城功能测试，请勿用于正式业务。
+
 ## 上游项目
 
 - [Mall4j GitHub 仓库](https://github.com/gz-yami/mall4j)
