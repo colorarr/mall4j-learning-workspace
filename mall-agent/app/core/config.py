@@ -16,6 +16,13 @@ class Settings(BaseSettings):
     TAVILY_API_KEY:str
     REDIS_URL: str
 
+    JAVA_AUTH_INTROSPECT_URL: str = "http://127.0.0.1:18080/internal/auth/introspect"
+    MALL_AGENT_AUTH_TOKEN: str
+    TEST_MALL_TOKEN: str | None = None
+    MCP_SERVER_URL: str = "http://127.0.0.1:18081/mcp"
+
+    LANGGRAPH_REDIS_URL: str = "redis://localhost:6379/0"
+
     model_config = SettingsConfigDict(
         env_file=ENV_PATH,
         env_file_encoding="utf-8",

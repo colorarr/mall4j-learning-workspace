@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite'
 import uni from '@dcloudio/vite-plugin-uni'
+import fs from 'fs'
 import path from 'path'
 import AutoImport from 'unplugin-auto-import/vite'
 import h5ProdEffectPlugin from 'uni-vite-plugin-h5-prod-effect'
@@ -28,11 +29,25 @@ export default defineConfig({
   server: {
     host: true,
     port: 5173,
-    open: true
+    open: true,
+    proxy: {
+      '/agent-api': {
+        target: 'http://127.0.0.1:18082',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/agent-api/, '')
+      }
+    }
   },
   resolve: {
-    alias: {
-      '@': path.resolve(__dirname, 'src')
-    }
+    alias: [
+      {
+        find: /^markstream-vue$/,
+        replacement: fs.realpathSync(path.resolve(__dirname, 'node_modules/markstream-vue/dist/index.js'))
+      },
+      {
+        find: '@',
+        replacement: path.resolve(__dirname, 'src')
+      }
+    ]
   }
 })

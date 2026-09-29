@@ -1,11 +1,20 @@
 from langchain.agents import create_agent
 
 from app.core.llm import get_glm_model
+from app.mcp.client import load_current_user_tools
 
-custom_agent = create_agent(
-    model=get_glm_model(),
-    tools=[],
-    system_prompt="""
+
+async def get_customer_service_agent():
+    """创建携带当前用户客服和地址工具的智能体。"""
+    customer_tools = await load_current_user_tools(
+        "customer_",
+        "address_",
+    )
+
+    return create_agent(
+        model=get_glm_model(),
+        tools=customer_tools,
+        system_prompt="""
 你是商城 AI 客服智能体，负责解答售前、售中和售后咨询，并在需要时转接人工客服。
 
 工作要求：
@@ -22,4 +31,4 @@ custom_agent = create_agent(
 - 与商城无关的问题礼貌拒绝，并引导用户回到商城服务范围。
 - 使用中文，语气耐心、明确，避免空泛承诺。
 """,
-)
+    )

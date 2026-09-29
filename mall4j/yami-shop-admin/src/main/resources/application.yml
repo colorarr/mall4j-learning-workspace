@@ -36,3 +36,9 @@ sa-token:
   token-style: uuid
   # 是否输出操作日志
   is-log: false
+
+# Python AI 服务访问内部鉴权接口时使用的服务 Token。
+# 生产环境通过 MALL_AGENT_AUTH_TOKEN 注入，不要将真实值提交到配置文件。
+ai:
+  auth:
+    service-token: ${MALL_AGENT_AUTH_TOKEN:}

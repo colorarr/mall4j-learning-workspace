@@ -2,8 +2,8 @@
   &__entry {
     position: fixed;
     right: 28rpx;
-    bottom: calc(126rpx + env(safe-area-inset-bottom));
-    z-index: 980;
+    bottom: calc(142rpx + env(safe-area-inset-bottom));
+    z-index: 1100;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -16,13 +16,25 @@
     border: 0;
     border-radius: 50%;
     box-shadow: 0 8rpx 24rpx rgba(31, 95, 139, 0.28);
+    cursor: grab;
+    touch-action: none;
+    transition: left 180ms ease, transform 120ms ease, box-shadow 120ms ease;
+    user-select: none;
+    will-change: left, top;
 
     &::after {
       border: 0;
     }
 
-    &:active {
+    &:active:not(&--dragging) {
       transform: scale(0.94);
+    }
+
+    &--dragging {
+      cursor: grabbing;
+      transition: none;
+      transform: scale(1.04);
+      box-shadow: 0 12rpx 30rpx rgba(31, 95, 139, 0.34);
     }
   }
 
@@ -204,6 +216,7 @@
       justify-content: flex-start;
 
       .ai-agent__message-bubble {
+        max-width: calc(100% - 68rpx);
         color: #333333;
         background: #ffffff;
         border: 1rpx solid #e7ecef;
@@ -223,7 +236,26 @@
     padding: 18rpx 22rpx;
     font-size: 26rpx;
     line-height: 40rpx;
-    word-break: break-all;
+    overflow-wrap: anywhere;
+    word-break: normal;
+  }
+
+  &__plain-text {
+    white-space: pre-wrap;
+  }
+
+  &__markdown {
+    display: block;
+    width: 100%;
+    color: inherit;
+    font-size: 26rpx;
+    line-height: 1.65;
+
+    :deep(.markdown-renderer) {
+      max-width: 100%;
+      color: inherit;
+      font: inherit;
+    }
   }
 
   &__typing {
@@ -250,6 +282,13 @@
       &:nth-child(3) {
         animation-delay: 240ms;
       }
+    }
+
+    text {
+      margin-left: 8rpx;
+      color: #8a949c;
+      font-size: 22rpx;
+      white-space: nowrap;
     }
   }
 

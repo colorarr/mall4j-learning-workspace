@@ -1,3 +1,4 @@
+from langgraph.checkpoint.base import BaseCheckpointSaver
 from langgraph.graph import END, START, StateGraph
 
 from app.graph.nodes.cart_node import cart_node
@@ -5,6 +6,7 @@ from app.graph.nodes.customer_service_node import customer_service_node
 from app.graph.nodes.order_node import order_node
 from app.graph.nodes.router_node import intent_node
 from app.graph.nodes.shopping_node import shopping_node
+from app.memory.redis import redis_checkpointer
 from app.schemas.intent import IntentType
 from app.graph.state import AgentState
 
@@ -49,8 +51,10 @@ def route_by_intent(state: AgentState) -> str:
     return "customer"
 
 
-def build_graph(state: AgentState):
-    graph = StateGraph(state)
+def build_graph(
+        checkpointer
+):
+    graph = StateGraph(AgentState)
 
 
     #添加节点
@@ -77,4 +81,7 @@ def build_graph(state: AgentState):
     graph.add_edge("customer", END)
     graph.add_edge("order", END)
 
-    return graph.compile()
+    return graph.compile(checkpointer=checkpointer)
+
+
+mall_graph = build_graph(redis_checkpointer)

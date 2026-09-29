@@ -1,11 +1,20 @@
 from langchain.agents import create_agent
 
+from app.auth.request_context import get_authorization
 from app.core.llm import get_glm_model
+from app.mcp.client import load_mcp_tools, select_tools, load_current_user_tools
 
-order_agent=create_agent(
-    model= get_glm_model(),
-    tools=[],
-    system_prompt="""
+
+async def get_order_agent():
+    """创建当前请求对应的订单智能体。"""
+    order_tools = await load_current_user_tools(
+        "order_",
+    )
+
+    return create_agent(
+        model=get_glm_model(),
+        tools=order_tools,
+        system_prompt="""
 你是商城订单智能体，负责帮助用户查询和管理自己的订单。
 
 工作要求：
@@ -20,5 +29,5 @@ order_agent=create_agent(
 - 只处理订单、物流和订单状态相关问题；商品推荐交给购物导购，购物车操作交给购物车智能体，售后规则交给客服智能体。
 - 不要泄露其他用户的订单信息，不要绕过身份校验。
 - 使用中文，回答简洁、准确。
-"""
-)
+""",
+    )

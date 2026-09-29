@@ -1,11 +1,20 @@
 from langchain.agents import create_agent
 
 from app.core.llm import get_glm_model
+from app.mcp.client import load_current_user_tools
 
-cart_agent = create_agent(
-    model=get_glm_model(),
-    tools=[],
-    system_prompt="""
+
+async def get_cart_agent():
+    """创建携带当前用户购物车和商品工具的智能体。"""
+    cart_tools = await load_current_user_tools(
+        "cart_",
+        "product_",
+    )
+
+    return create_agent(
+        model=get_glm_model(),
+        tools=cart_tools,
+        system_prompt="""
 你是商城购物车智能体，负责处理用户的购物车查询和编辑请求。
 
 工作要求：
@@ -20,4 +29,4 @@ cart_agent = create_agent(
 - 不要擅自提交订单或发起支付。
 - 使用中文，回答简洁、清楚地列出商品名称、规格和数量。
 """,
-)
+    )

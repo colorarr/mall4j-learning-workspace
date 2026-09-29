@@ -1,10 +1,12 @@
-from app.agents.order import order_agent
+from app.agents.order import get_order_agent
 from app.graph.state import AgentState
 
 
-def order_node(state: AgentState):
-    result = order_agent.invoke({
-        "messages": state.messages
+async def order_node(state: AgentState):
+    order_agent = await get_order_agent()
+
+    result = await order_agent.ainvoke({
+        "messages":state.messages
     })
 
     return {
