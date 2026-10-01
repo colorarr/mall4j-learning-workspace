@@ -12,6 +12,7 @@ RUN apt-get update \
 ENV CARGO_HOME=/usr/local/cargo \
     RUSTUP_HOME=/usr/local/rustup \
     CARGO_BUILD_JOBS=1 \
+    CARGO_PROFILE_RELEASE_LTO=false \
     GRPC_PYTHON_BUILD_EXT_COMPILER_JOBS=1 \
     GRPC_PYTHON_BUILD_SYSTEM_OPENSSL=1 \
     GRPC_PYTHON_CFLAGS="-O0 -g0 -std=c++17 -fvisibility=hidden -fno-wrapv -fno-exceptions" \
