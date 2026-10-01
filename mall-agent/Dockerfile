@@ -14,7 +14,7 @@ ENV CARGO_HOME=/usr/local/cargo \
     CARGO_BUILD_JOBS=1 \
     GRPC_PYTHON_BUILD_EXT_COMPILER_JOBS=1 \
     GRPC_PYTHON_BUILD_SYSTEM_OPENSSL=1 \
-    GRPC_PYTHON_CFLAGS="-O0 -std=c++17 -fvisibility=hidden" \
+    GRPC_PYTHON_CFLAGS="-O0 -g0 -std=c++17 -fvisibility=hidden -fno-wrapv -fno-exceptions" \
     GRPC_BUILD_WITH_BORING_SSL_ASM=0
 ENV PATH=${CARGO_HOME}/bin:${PATH}
 
