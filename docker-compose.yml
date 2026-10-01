@@ -7,6 +7,8 @@ services:
       dockerfile: ./yami-shop-admin/Dockerfile
     image: ceshi/mall4j-admin:latest
     container_name: mall4j-admin
+    cpus: "0.75"
+    mem_limit: 1280m
     network_mode: host
     restart: unless-stopped
     environment:
@@ -29,6 +31,8 @@ services:
       dockerfile: Dockerfile
     image: ceshi/mall-mcp-server:latest
     container_name: mall-mcp-server
+    cpus: "0.50"
+    mem_limit: 640m
     network_mode: host
     restart: unless-stopped
     environment:

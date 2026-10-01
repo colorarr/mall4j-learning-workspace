@@ -11,7 +11,10 @@ RUN apt-get update \
 
 ENV CARGO_HOME=/usr/local/cargo \
     RUSTUP_HOME=/usr/local/rustup \
-    CARGO_BUILD_JOBS=1
+    CARGO_BUILD_JOBS=1 \
+    GRPC_PYTHON_BUILD_EXT_COMPILER_JOBS=1 \
+    GRPC_PYTHON_BUILD_SYSTEM_OPENSSL=1 \
+    GRPC_BUILD_WITH_BORING_SSL_ASM=0
 ENV PATH=${CARGO_HOME}/bin:${PATH}
 
 # Current PyPI releases of orjson/tiktoken need a recent Rust toolchain on s390x.
