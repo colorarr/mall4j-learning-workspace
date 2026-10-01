@@ -1,6 +1,10 @@
 from fastapi import Request, HTTPException ,status
 
-from app.auth.auth_client import java_auth_client, JavaAuthError
+from app.auth.auth_client import (
+    JavaAuthError,
+    JavaAuthUnavailableError,
+    java_auth_client,
+)
 from app.auth.request_context import (
     reset_authorization,
     set_authorization,
@@ -24,6 +28,11 @@ async def get_user_context(request:Request):
             authorization=authorization,
             request_id=request_id,
         )
+    except JavaAuthUnavailableError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="商城鉴权服务暂时不可用",
+        ) from exc
     except JavaAuthError as exc:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

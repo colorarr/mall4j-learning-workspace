@@ -21,3 +21,7 @@
 **/*.log
 **/__pycache__/
 **/.pytest_cache/
+mall-agent/data/
+**/*.sqlite
+**/*.sqlite-wal
+**/*.sqlite-shm

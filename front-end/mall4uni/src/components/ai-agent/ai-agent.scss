@@ -1,9 +1,16 @@
 .ai-agent {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  overflow: visible;
+  pointer-events: none;
+
   &__entry {
     position: fixed;
     right: 28rpx;
     bottom: calc(142rpx + env(safe-area-inset-bottom));
     z-index: 1100;
+    pointer-events: auto;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -48,6 +55,7 @@
     position: fixed;
     inset: 0;
     z-index: 1200;
+    pointer-events: auto;
     display: flex;
     align-items: flex-end;
     background: rgba(20, 33, 45, 0.46);
@@ -55,6 +63,7 @@
   }
 
   &__panel {
+    position: relative;
     display: flex;
     flex-direction: column;
     width: 100%;
@@ -127,6 +136,36 @@
     margin-right: 8rpx;
     background: #54c980;
     border-radius: 50%;
+
+    &--offline {
+      background: #e59b3e;
+    }
+
+    &--checking {
+      background: #e5c04b;
+    }
+  }
+
+  &__header-actions {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: 12rpx;
+  }
+
+  &__new-chat {
+    margin: 0;
+    padding: 10rpx 18rpx;
+    color: #3a86b9;
+    font-size: 24rpx;
+    line-height: 32rpx;
+    background: #eef7fc;
+    border: 0;
+    border-radius: 24rpx;
+
+    &::after {
+      border: 0;
+    }
   }
 
   &__close {
@@ -292,6 +331,118 @@
     }
   }
 
+  &__approval-card {
+    width: calc(100% - 68rpx);
+    padding: 22rpx;
+    background: #ffffff;
+    border: 1rpx solid #dfe8ed;
+    border-radius: 4rpx 18rpx 18rpx 18rpx;
+    box-sizing: border-box;
+  }
+
+  &__approval-header {
+    display: flex;
+    align-items: center;
+  }
+
+  &__approval-icon {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 38rpx;
+    height: 38rpx;
+    margin-right: 14rpx;
+    color: #3a86b9;
+    font-size: 24rpx;
+    font-weight: 700;
+    background: #eaf5fb;
+    border-radius: 50%;
+  }
+
+  &__approval-heading {
+    display: flex;
+    flex-direction: column;
+  }
+
+  &__approval-title {
+    display: block;
+    color: #222222;
+    font-size: 27rpx;
+    font-weight: 600;
+    line-height: 36rpx;
+  }
+
+  &__approval-tip {
+    display: block;
+    margin-top: 2rpx;
+    color: #69747c;
+    font-size: 21rpx;
+    line-height: 30rpx;
+  }
+
+  &__approval-action {
+    display: flex;
+    flex-direction: column;
+    margin-top: 18rpx;
+    padding: 18rpx;
+    background: #f5f8fa;
+    border-radius: 12rpx;
+  }
+
+  &__approval-action-name {
+    color: #2d3439;
+    font-size: 25rpx;
+    font-weight: 600;
+    line-height: 34rpx;
+  }
+
+  &__approval-description {
+    margin-top: 4rpx;
+    color: #6f7a82;
+    font-size: 22rpx;
+    line-height: 32rpx;
+  }
+
+  &__approval-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12rpx;
+    margin-top: 18rpx;
+  }
+
+  &__approval-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 58rpx;
+    margin: 0;
+    padding: 0 24rpx;
+    font-size: 23rpx;
+    line-height: 1;
+    border-radius: 29rpx;
+
+    &::after {
+      border: 0;
+    }
+
+    &[disabled] {
+      opacity: 0.58;
+    }
+
+    &--reject {
+      color: #5f6970;
+      background: #ffffff;
+      border: 1rpx solid #d6dee3;
+    }
+
+    &--approve {
+      color: #ffffff;
+      background: #3a86b9;
+      border: 1rpx solid #3a86b9;
+    }
+  }
+
   &__composer {
     display: flex;
     flex-shrink: 0;
@@ -382,4 +533,10 @@
     opacity: 1;
     transform: translateY(-5rpx);
   }
+}
+
+:global(uni-modal),
+:global(uni-modal .uni-mask),
+:global(uni-modal .uni-modal) {
+  z-index: 1600 !important;
 }

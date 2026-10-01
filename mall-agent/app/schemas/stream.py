@@ -23,6 +23,9 @@ class StreamEventType(StrEnum):
     # 工具节点执行结束，携带成功或失败状态。
     TOOL_END = "tool_end"
 
+    # 危险工具调用等待用户审批，携带中断 ID、工具参数和允许的决策。
+    APPROVAL_REQUIRED = "approval_required"
+
     # 一条面向用户的 AI 消息开始生成。
     MESSAGE_START = "message_start"
     # AI 消息的文本增量，前端应追加到当前消息气泡。

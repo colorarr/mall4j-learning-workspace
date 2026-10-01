@@ -83,6 +83,30 @@
         </view>
       </view>
 
+      <view
+        class="home-ai-assistant"
+        role="button"
+        aria-label="打开商城智能助手"
+        @tap="openAiAssistant"
+      >
+        <image
+          class="home-ai-assistant__icon"
+          src="@/static/images/icon/ai-assistant.png"
+          mode="aspectFit"
+        />
+        <view class="home-ai-assistant__copy">
+          <text class="home-ai-assistant__title">
+            商城 AI 助手
+          </text>
+          <text class="home-ai-assistant__subtitle">
+            选商品、查订单，随时问我
+          </text>
+        </view>
+        <text class="home-ai-assistant__action">
+          立即咨询 ›
+        </text>
+      </view>
+
       <!-- 消息播放 -->
       <view
         v-if="news && news.length"
@@ -315,6 +339,10 @@ const seq = ref(0)
 const news = ref([])
 const taglist = ref([])
 const updata = ref(true)
+
+const openAiAssistant = () => {
+  uni.$emit('mall4j:open-ai-agent')
+}
 
 onLoad(() => {
   getAllData()

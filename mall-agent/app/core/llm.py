@@ -23,7 +23,7 @@ def get_glm_model():
     return llm
 
 def get_model_with_structured(schema: type[StructuredSchema]):
-    """Return a model chain whose response is validated against ``schema``."""
+    """创建结构化输出链，统一关闭深度思考，优先响应速度。"""
     prompt = ChatPromptTemplate.from_messages([
         (
             "system",
@@ -40,6 +40,9 @@ def get_model_with_structured(schema: type[StructuredSchema]):
         base_url=BASE_URL,
         api_key=API_KEY,
         model=MODEL_NAME,
+        extra_body={
+            "thinking": {"type": "disabled"},
+        },
     )
     llm_with_structured = llm.with_structured_output(
         schema,

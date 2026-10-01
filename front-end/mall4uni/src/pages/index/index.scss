@@ -102,6 +102,48 @@ swiper-item {
   }
 }
 
+.home-ai-assistant {
+  display: flex;
+  align-items: center;
+  margin: 20rpx 24rpx;
+  padding: 18rpx 22rpx;
+  background: linear-gradient(110deg, #eef8ff, #f7fbff);
+  border: 1rpx solid #d6ebf8;
+  border-radius: 18rpx;
+
+  &__icon {
+    flex-shrink: 0;
+    width: 72rpx;
+    height: 72rpx;
+    margin-right: 16rpx;
+  }
+
+  &__copy {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  &__title {
+    color: #263f51;
+    font-size: 27rpx;
+    font-weight: 600;
+  }
+
+  &__subtitle {
+    margin-top: 4rpx;
+    color: #7b909e;
+    font-size: 22rpx;
+  }
+
+  &__action {
+    flex-shrink: 0;
+    color: #3187b9;
+    font-size: 23rpx;
+  }
+}
+
 /* 消息播放 */
 .message-play {
   position: relative;

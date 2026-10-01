@@ -1,0 +1,5 @@
+**
+!yami-shop-admin/
+!yami-shop-admin/Dockerfile
+!yami-shop-admin/target/
+!yami-shop-admin/target/*.jar

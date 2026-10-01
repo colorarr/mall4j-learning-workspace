@@ -124,7 +124,7 @@ public class CartTools {
     @McpTool(
             name = "cart_remove_items",
             title = "删除购物车商品",
-            description = "根据购物车明细ID列表删除当前用户购物车中的商品。调用前应确认目标商品。",
+            description = "根据购物车明细ID列表删除当前用户购物车中的商品。目标明确后直接调用，系统会在执行前通过审批界面确认。",
             annotations = @McpTool.McpAnnotations(
                     title = "删除购物车商品",
                     readOnlyHint = false,
@@ -153,7 +153,7 @@ public class CartTools {
     @McpTool(
             name = "cart_clear",
             title = "清空购物车",
-            description = "清空当前登录用户的全部购物车商品。该操作不可逆，调用前必须得到用户明确确认。",
+            description = "清空当前登录用户的全部购物车商品。目标明确后直接调用，系统会在执行前通过审批界面确认。",
             annotations = @McpTool.McpAnnotations(
                     title = "清空购物车",
                     readOnlyHint = false,
@@ -255,7 +255,7 @@ public class CartTools {
     @McpTool(
             name = "cart_clean_expired_items",
             title = "清理失效购物项",
-            description = "删除当前用户购物车中的全部失效商品。调用前应向用户说明影响。",
+            description = "删除当前用户购物车中的全部失效商品。目标明确后直接调用，系统会在执行前通过审批界面确认。",
             annotations = @McpTool.McpAnnotations(
                     title = "清理失效购物项",
                     readOnlyHint = false,

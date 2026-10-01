@@ -1,5 +1,15 @@
 from langchain.agents import create_agent
+from langchain.agents.middleware import (
+    ModelCallLimitMiddleware,
+    ModelRetryMiddleware,
+    ToolCallLimitMiddleware,
+    ToolRetryMiddleware,
+)
 
+from app.agents.tool_policy import (
+    SHOPPING_TOOL_POLICIES,
+    get_retryable_tool_names,
+)
 from app.core.llm import get_glm_model
 from app.mcp.client import load_current_user_tools
 
@@ -10,9 +20,54 @@ async def get_shopping_agent():
         "product_"
     )
 
+    # 获取可重试工具名单
+    retryable_tool_names = get_retryable_tool_names(
+        SHOPPING_TOOL_POLICIES,
+    )
+
+    # 定义模型调用次数的中间件
+    model_call_limit = ModelCallLimitMiddleware(
+        run_limit=8,
+        exit_behavior="end",
+    )
+
+    # 定义工具调用次数的中间件
+    tool_call_limit = ToolCallLimitMiddleware(
+        run_limit=12,
+        exit_behavior="end",
+    )
+
+    # 定义工具重试的中间件
+    tool_retry_middleware = ToolRetryMiddleware(
+        tools=retryable_tool_names,
+        max_retries=2,
+        initial_delay=1.0,
+        backoff_factor=2.0,
+        max_delay=8.0,
+        jitter=True,
+        on_failure="continue",
+    )
+
+    # 定义模型重试的中间件
+    model_retry_middleware = ModelRetryMiddleware(
+        max_retries=2,
+        initial_delay=1.0,
+        backoff_factor=2.0,
+        max_delay=8.0,
+        jitter=True,
+        on_failure="error",
+    )
+
     return create_agent(
+        name="shopping_agent",
         model=get_glm_model(),
         tools=product_tools,
+        middleware=[
+            model_call_limit,
+            tool_call_limit,
+            model_retry_middleware,
+            tool_retry_middleware,
+        ],
         system_prompt="""
         你是商城购物导购智能体，负责帮助用户发现和选择商品。
 

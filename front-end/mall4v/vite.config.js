@@ -77,6 +77,8 @@ function resolveElementPlusIcon(componentName) {
 // https://vitejs.dev/config/
 export default defineConfig(() => {
   return {
+    // 后台可挂载在同源 /admin 子路径，也保留根路径部署能力。
+    base: process.env.VITE_APP_BASE_PATH || '/',
     optimizeDeps: {
       // 扩大开发态依赖扫描范围，提前覆盖懒加载页面里的直接依赖导入。
       entries: optimizeDepEntries,

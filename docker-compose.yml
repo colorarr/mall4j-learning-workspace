@@ -1,0 +1,91 @@
+name: mall4j-stack
+
+services:
+  mall4j-admin:
+    build:
+      context: ./mall4j
+      dockerfile: ./yami-shop-admin/Dockerfile
+    image: ceshi/mall4j-admin:latest
+    container_name: mall4j-admin
+    network_mode: host
+    restart: unless-stopped
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      MYSQL_HOST: "127.0.0.1"
+      MYSQL_PORT: "3306"
+      MYSQL_DATABASE: "yami_shops"
+      MYSQL_USERNAME: "${MYSQL_USERNAME:-mall4j}"
+      MYSQL_PASSWORD: "${MYSQL_PASSWORD:-mall4j_local}"
+      REDIS_HOST: "127.0.0.1"
+      REDIS_PORT: "6379"
+      REDIS_DATABASE: "0"
+      XXL_JOB_ACCESS_TOKEN: "${XXL_JOB_ACCESS_TOKEN:-default_token}"
+      XXL_JOB_ADDRESS: "${XXL_JOB_ADDRESS:-http://127.0.0.1:8080/xxl-job-admin}"
+      MALL_AGENT_AUTH_TOKEN: "${MALL_AGENT_AUTH_TOKEN:?Set MALL_AGENT_AUTH_TOKEN in .env}"
+
+  mall-mcp-server:
+    build:
+      context: ./mall-mcp-server
+      dockerfile: Dockerfile
+    image: ceshi/mall-mcp-server:latest
+    container_name: mall-mcp-server
+    network_mode: host
+    restart: unless-stopped
+    environment:
+      SERVER_PORT: "18081"
+      MALL4J_BASE_URL: "http://127.0.0.1:8080"
+    depends_on:
+      - mall4j-admin
+
+  mall-agent:
+    profiles: ["agent"]
+    build:
+      context: ./mall-agent
+      dockerfile: Dockerfile
+    image: ceshi/mall-agent:latest
+    container_name: mall-agent
+    network_mode: host
+    restart: unless-stopped
+    cpus: "0.75"
+    mem_limit: 1g
+    env_file:
+      - ./mall-agent/.env
+    environment:
+      PYTHONUNBUFFERED: "1"
+      CHECKPOINT_BACKEND: "sqlite"
+      LANGGRAPH_SQLITE_PATH: "/data/agent-checkpoints.sqlite"
+      JAVA_AUTH_INTROSPECT_URL: "http://127.0.0.1:8080/internal/auth/introspect"
+      MCP_SERVER_URL: "http://127.0.0.1:18081/mcp"
+    volumes:
+      - ./mall-agent/data:/data
+    depends_on:
+      - mall-mcp-server
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:18082/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+
+  mall4v:
+    build:
+      context: ./front-end/mall4v
+      dockerfile: Dockerfile
+    image: ceshi/mall4v:latest
+    container_name: mall4v
+    restart: unless-stopped
+    ports:
+      - "8085:80"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  mall4uni:
+    build:
+      context: ./front-end/mall4uni
+      dockerfile: Dockerfile
+    image: ceshi/mall4uni:latest
+    container_name: mall4uni
+    restart: unless-stopped
+    ports:
+      - "8086:80"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"

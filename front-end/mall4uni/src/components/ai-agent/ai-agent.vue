@@ -41,17 +41,29 @@
               商城智能助手
             </text>
             <view class="ai-agent__status">
-              <view class="ai-agent__status-dot" />
-              <text>在线为你服务</text>
+              <view
+                class="ai-agent__status-dot"
+                :class="`ai-agent__status-dot--${agentStatus}`"
+              />
+              <text>{{ agentStatusText }}</text>
             </view>
           </view>
-          <button
-            class="ai-agent__close"
-            aria-label="关闭智能助手"
-            @tap="closeChat"
-          >
-            ×
-          </button>
+          <view class="ai-agent__header-actions">
+            <button
+              class="ai-agent__new-chat"
+              aria-label="开始新对话"
+              @tap="startNewConversation"
+            >
+              新对话
+            </button>
+            <button
+              class="ai-agent__close"
+              aria-label="关闭智能助手"
+              @tap="closeChat"
+            >
+              ×
+            </button>
+          </view>
         </view>
 
         <scroll-view
@@ -113,7 +125,64 @@
           </view>
 
           <view
-            v-if="isReplying"
+            v-if="pendingApproval"
+            id="ai-approval"
+            class="ai-agent__message-row ai-agent__message-row--assistant"
+          >
+            <image
+              class="ai-agent__message-avatar"
+              src="/static/images/icon/ai-assistant.png"
+              mode="aspectFit"
+            />
+            <view class="ai-agent__approval-card">
+              <view class="ai-agent__approval-header">
+                <view class="ai-agent__approval-icon">
+                  !
+                </view>
+                <view class="ai-agent__approval-heading">
+                  <text class="ai-agent__approval-title">
+                    需要你的确认
+                  </text>
+                  <text class="ai-agent__approval-tip">
+                    确认后将立即执行
+                  </text>
+                </view>
+              </view>
+
+              <view
+                v-for="(action, index) in pendingApproval.actions"
+                :key="`${action.name}-${index}`"
+                class="ai-agent__approval-action"
+              >
+                <text class="ai-agent__approval-action-name">
+                  {{ action.displayName }}
+                </text>
+                <text class="ai-agent__approval-description">
+                  {{ action.description }}
+                </text>
+              </view>
+
+              <view class="ai-agent__approval-buttons">
+                <button
+                  class="ai-agent__approval-button ai-agent__approval-button--reject"
+                  :disabled="isApprovalSubmitting"
+                  @tap.stop="submitApproval('reject')"
+                >
+                  取消
+                </button>
+                <button
+                  class="ai-agent__approval-button ai-agent__approval-button--approve"
+                  :disabled="isApprovalSubmitting"
+                  @tap.stop="submitApproval('approve')"
+                >
+                  确认执行
+                </button>
+              </view>
+            </view>
+          </view>
+
+          <view
+            v-if="isReplying || isHistoryLoading"
             id="ai-message-loading"
             class="ai-agent__message-row ai-agent__message-row--assistant"
           >
@@ -126,8 +195,8 @@
               <view />
               <view />
               <view />
-              <text v-if="replyStatus">
-                {{ replyStatus }}
+              <text v-if="isHistoryLoading || replyStatus">
+                {{ isHistoryLoading ? '正在加载聊天记录' : replyStatus }}
               </text>
             </view>
           </view>
@@ -148,7 +217,7 @@
           <button
             class="ai-agent__send"
             :class="{ 'ai-agent__send--active': canSend }"
-            :disabled="!canSend"
+            :disabled="isReplying || isHistoryLoading || Boolean(pendingApproval)"
             @tap="sendMessage"
           >
             发送
@@ -162,7 +231,11 @@
 <script setup>
 import MarkdownRender from 'markstream-vue'
 import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue'
-import { streamAgentReply } from '@/api/ai-agent.js'
+import {
+  getAgentHistory,
+  resumeAgentReply,
+  streamAgentReply
+} from '@/api/ai-agent.js'
 import './markstream.css'
 
 const ENTRY_SIZE_RPX = 94
@@ -171,6 +244,26 @@ const ENTRY_TOP_MARGIN_RPX = 24
 const DRAG_THRESHOLD_PX = 6
 const POSITION_STORAGE_KEY = 'mall4j-ai-agent-position'
 const CONVERSATION_STORAGE_KEY = 'mall4j-ai-agent-conversation-id'
+
+const APPROVAL_TOOL_NAMES = {
+  cart_remove_items: '删除购物车商品',
+  cart_clear: '清空购物车',
+  cart_clean_expired_items: '清理失效购物项',
+  order_cancel: '取消订单',
+  order_confirm_receipt: '确认收货',
+  order_delete_history: '删除历史订单',
+  address_delete: '删除收货地址'
+}
+
+const APPROVAL_TOOL_DESCRIPTIONS = {
+  cart_remove_items: '将删除你选中的购物车商品。',
+  cart_clear: '将清空购物车中的全部商品。',
+  cart_clean_expired_items: '将删除购物车中的全部失效商品。',
+  order_cancel: '将取消你选中的订单。',
+  order_confirm_receipt: '将把你选中的订单更新为已收货。',
+  order_delete_history: '将删除你选中的历史订单记录。',
+  address_delete: '将删除你选中的收货地址。'
+}
 
 const quickQuestions = [
   '推荐热销商品',
@@ -183,12 +276,17 @@ const isDragging = ref(false)
 const inputValue = ref('')
 const messages = ref([])
 const isReplying = ref(false)
+const isHistoryLoading = ref(false)
+const isApprovalSubmitting = ref(false)
+const pendingApproval = ref(null)
 const replyStatus = ref('')
 const scrollIntoView = ref('')
+const agentStatus = ref('checking')
 const conversationId = ref(uni.getStorageSync(CONVERSATION_STORAGE_KEY) || '')
 const agentApi = (import.meta.env.VITE_APP_AGENT_API || '/agent-api').replace(/\/$/, '')
 let messageId = 0
 let requestController = null
+let historyController = null
 let scrollTimer = null
 let lastDragEndAt = 0
 
@@ -207,7 +305,15 @@ const dragState = {
 }
 
 const canSend = computed(() => {
-  return inputValue.value.trim().length > 0 && !isReplying.value
+  return inputValue.value.trim().length > 0 &&
+    !isReplying.value &&
+    !isHistoryLoading.value &&
+    !pendingApproval.value
+})
+const agentStatusText = computed(() => {
+  if (agentStatus.value === 'online') return '在线为你服务'
+  if (agentStatus.value === 'offline') return '服务暂时离线'
+  return '正在连接服务'
 })
 
 const entryStyle = computed(() => {
@@ -413,6 +519,8 @@ const scheduleScrollPosition = (targetId) => {
 
 const openChat = () => {
   visible.value = true
+  checkAgentHealth()
+  loadConversationHistory()
   if (isTabPage()) {
     uni.hideTabBar({ animation: true })
   }
@@ -425,10 +533,98 @@ const closeChat = () => {
   }
 }
 
+const resetConversation = () => {
+  const controller = requestController
+  requestController = null
+  controller?.abort()
+
+  const activeHistoryController = historyController
+  historyController = null
+  activeHistoryController?.abort()
+
+  conversationId.value = ''
+  uni.removeStorageSync(CONVERSATION_STORAGE_KEY)
+
+  messages.value = []
+  inputValue.value = ''
+  isReplying.value = false
+  isHistoryLoading.value = false
+  isApprovalSubmitting.value = false
+  pendingApproval.value = null
+  replyStatus.value = ''
+  scrollIntoView.value = ''
+  messageId = 0
+
+  if (scrollTimer) {
+    clearTimeout(scrollTimer)
+    scrollTimer = null
+  }
+}
+
+const startNewConversation = () => {
+  if (pendingApproval.value) {
+    uni.showToast({
+      title: '请先处理待确认的操作',
+      icon: 'none'
+    })
+    return
+  }
+
+  if (messages.value.length === 0 && !isReplying.value) {
+    resetConversation()
+    uni.showToast({
+      title: '已开始新对话',
+      icon: 'none'
+    })
+    return
+  }
+
+  uni.showModal({
+    title: '开始新对话',
+    content: '当前聊天窗口将被清空，历史会话仍会保留。',
+    confirmText: '开始',
+    cancelText: '取消',
+    success: (result) => {
+      if (!result.confirm) return
+
+      resetConversation()
+      uni.showToast({
+        title: '已开始新对话',
+        icon: 'none'
+      })
+    }
+  })
+}
+
 const getUserToken = () => {
   const token = uni.getStorageSync('Token')
   if (token) return token
   return uni.getStorageSync('loginResult')?.accessToken || ''
+}
+
+const checkAgentHealth = async () => {
+  try {
+    const response = await fetch(`${agentApi}/health`, {
+      headers: { Accept: 'application/json' }
+    })
+    agentStatus.value = response.ok ? 'online' : 'offline'
+  } catch (error) {
+    agentStatus.value = 'offline'
+  }
+}
+
+const promptLogin = (message = '登录后即可使用智能助手咨询商品和订单。') => {
+  uni.showModal({
+    title: '请先登录',
+    content: message,
+    cancelText: '稍后',
+    confirmText: '去登录',
+    success: (result) => {
+      if (result.confirm) {
+        uni.navigateTo({ url: '/pages/accountLogin/accountLogin' })
+      }
+    }
+  })
 }
 
 const createRequestId = () => {
@@ -449,14 +645,130 @@ const saveConversationId = (nextConversationId) => {
   uni.setStorageSync(CONVERSATION_STORAGE_KEY, nextConversationId)
 }
 
+const createPendingApproval = (data, assistantMessage = null) => {
+  if (
+    !data?.conversation_id ||
+    !data?.interrupt_id ||
+    !Array.isArray(data?.actions) ||
+    data.actions.length === 0
+  ) {
+    throw new Error('智能助手返回的审批信息格式异常')
+  }
+
+  saveConversationId(data.conversation_id)
+
+  return {
+    conversationId: data.conversation_id,
+    interruptId: data.interrupt_id,
+    reviewConfigs: Array.isArray(data.review_configs) ? data.review_configs : [],
+    assistantMessage,
+    actions: data.actions.map((action) => ({
+      name: action?.name || 'unknown',
+      displayName: APPROVAL_TOOL_NAMES[action?.name] || '商城数据变更',
+      description: APPROVAL_TOOL_DESCRIPTIONS[action?.name] ||
+        action?.description ||
+        '该操作将修改商城数据。'
+    }))
+  }
+}
+
+const clearExpiredLogin = () => {
+  uni.removeStorageSync('expiresTimeStamp')
+  uni.removeStorageSync('isRefreshingToken')
+  uni.removeStorageSync('loginResult')
+  uni.removeStorageSync('Token')
+}
+
+const applyHistoryMessages = (history) => {
+  messages.value = history.messages.map((message, index) => ({
+    id: index + 1,
+    role: message.role,
+    content: message.content,
+    final: true
+  }))
+  messageId = messages.value.length
+
+  if (messageId > 0) {
+    updateScrollPosition(`ai-message-${messageId}`)
+  }
+}
+
+const finishHistoryLoading = (controller) => {
+  if (historyController !== controller) return
+  historyController = null
+  isHistoryLoading.value = false
+}
+
+const loadConversationHistory = async () => {
+  const currentConversationId = getConversationId()
+  if (
+    !currentConversationId ||
+    messages.value.length > 0 ||
+    isReplying.value ||
+    isHistoryLoading.value
+  ) return
+
+  const token = getUserToken()
+  if (!token) return
+
+  const controller = new AbortController()
+  historyController = controller
+  isHistoryLoading.value = true
+
+  try {
+    const history = await getAgentHistory({
+      baseUrl: agentApi,
+      token,
+      conversationId: currentConversationId,
+      signal: controller.signal
+    })
+
+    if (
+      historyController !== controller ||
+      getConversationId() !== currentConversationId
+    ) return
+
+    if (!history.exists) {
+      conversationId.value = ''
+      uni.removeStorageSync(CONVERSATION_STORAGE_KEY)
+      return
+    }
+
+    applyHistoryMessages(history)
+  } catch (error) {
+    if (error.name === 'AbortError') return
+
+    if (error.status === 401) {
+      clearExpiredLogin()
+      promptLogin('登录状态已过期，请重新登录后继续使用智能助手。')
+    } else {
+      uni.showToast({
+        title: error.message || '聊天记录加载失败',
+        icon: 'none'
+      })
+    }
+  } finally {
+    finishHistoryLoading(controller)
+  }
+}
+
 const sendMessage = () => {
-  const content = inputValue.value.trim()
-  if (!content || isReplying.value) return
+  if (
+    isReplying.value ||
+    isHistoryLoading.value ||
+    pendingApproval.value
+  ) return
 
   const token = getUserToken()
   if (!token) {
+    promptLogin()
+    return
+  }
+
+  const content = inputValue.value.trim()
+  if (!content) {
     uni.showToast({
-      title: '请先登录商城账号',
+      title: '请输入你想咨询的问题',
       icon: 'none'
     })
     return
@@ -520,13 +832,22 @@ const sendMessage = () => {
           assistantMessage.content = data.content
         }
         assistantMessage.final = true
+      } else if (type === 'approval_required') {
+        pendingApproval.value = createPendingApproval(
+          data,
+          assistantMessageAdded ? assistantMessage : null
+        )
+        replyStatus.value = ''
+        nextTick(() => updateScrollPosition('ai-approval'))
       } else if (type === 'done') {
         saveConversationId(data.conversation_id)
         assistantMessage.final = true
       }
     }
   })
-    .then(() => {
+    .then(({ terminalEvent }) => {
+      if (terminalEvent === 'approval_required') return
+
       if (!assistantMessageAdded) {
         ensureAssistantMessage()
         assistantMessage.content = '请求已完成，但没有生成回复内容'
@@ -536,14 +857,183 @@ const sendMessage = () => {
     .catch((error) => {
       if (error.name === 'AbortError') return
       ensureAssistantMessage()
-      assistantMessage.content = error.message || '智能助手暂时无法响应，请稍后重试'
+      if (error.status === 401) {
+        clearExpiredLogin()
+        assistantMessage.content = '登录状态已过期，请重新登录后再试。'
+        promptLogin('登录状态已过期，请重新登录后继续使用智能助手。')
+      } else if (error.status === 404 || error.status >= 500 || error.name === 'TypeError') {
+        agentStatus.value = 'offline'
+        assistantMessage.content = '智能助手服务暂时不可用，请稍后重试。'
+      } else {
+        assistantMessage.content = error.message || '智能助手暂时无法响应，请稍后重试'
+      }
       assistantMessage.final = true
     })
     .finally(() => {
-      if (requestController === controller) requestController = null
+      if (requestController !== controller) return
+
+      requestController = null
       isReplying.value = false
       replyStatus.value = ''
-      if (assistantMessageAdded) {
+      if (pendingApproval.value) {
+        updateScrollPosition('ai-approval')
+      } else if (assistantMessageAdded) {
+        assistantMessage.final = true
+        updateScrollPosition(`ai-message-${assistantMessage.id}`)
+      }
+    })
+}
+
+const submitApproval = (decisionType) => {
+  if (
+    !pendingApproval.value ||
+    isApprovalSubmitting.value ||
+    isReplying.value
+  ) return
+
+  const token = getUserToken()
+  if (!token) {
+    promptLogin()
+    return
+  }
+
+  const approval = pendingApproval.value
+  pendingApproval.value = null
+  const existingAssistantMessage = approval.assistantMessage
+  const assistantMessage = existingAssistantMessage || {
+    id: messageId + 1,
+    role: 'assistant',
+    content: '',
+    final: false
+  }
+  let assistantMessageAdded = Boolean(existingAssistantMessage)
+
+  if (assistantMessageAdded) {
+    assistantMessage.final = false
+  }
+
+  const ensureAssistantMessage = () => {
+    if (assistantMessageAdded) return
+    messageId = assistantMessage.id
+    messages.value.push(assistantMessage)
+    assistantMessageAdded = true
+  }
+
+  const decisions = approval.actions.map(() => {
+    if (decisionType === 'approve') {
+      return { type: 'approve' }
+    }
+
+    return {
+      type: 'reject',
+      message: '用户在确认窗口中拒绝执行该操作'
+    }
+  })
+
+  isApprovalSubmitting.value = true
+  isReplying.value = true
+  replyStatus.value = '正在取消操作'
+  if (decisionType === 'approve') {
+    replyStatus.value = '正在执行已确认的操作'
+  }
+  updateScrollPosition('ai-message-loading')
+
+  const controller = new AbortController()
+  requestController = controller
+
+  resumeAgentReply({
+    baseUrl: agentApi,
+    token,
+    conversationId: approval.conversationId,
+    interruptId: approval.interruptId,
+    decisions,
+    requestId: createRequestId(),
+    signal: controller.signal,
+    onEvent: ({ type, data }) => {
+      if (type === 'start') {
+        saveConversationId(data.conversation_id)
+      } else if (type === 'status') {
+        replyStatus.value = data.message || '正在处理审批结果'
+      } else if (type === 'agent_start') {
+        replyStatus.value = '正在继续处理请求'
+      } else if (type === 'tool_start') {
+        replyStatus.value = '正在执行已确认的操作'
+      } else if (type === 'message_start') {
+        replyStatus.value = '正在生成回复'
+      } else if (type === 'token') {
+        ensureAssistantMessage()
+        assistantMessage.content += data.content || ''
+        replyStatus.value = ''
+        scheduleScrollPosition(`ai-message-${assistantMessage.id}`)
+      } else if (type === 'message_end') {
+        ensureAssistantMessage()
+        if (typeof data.content === 'string') {
+          assistantMessage.content = data.content
+        }
+        assistantMessage.final = true
+      } else if (type === 'approval_required') {
+        pendingApproval.value = createPendingApproval(
+          data,
+          assistantMessageAdded ? assistantMessage : null
+        )
+        replyStatus.value = ''
+        nextTick(() => updateScrollPosition('ai-approval'))
+      } else if (type === 'done') {
+        saveConversationId(data.conversation_id)
+        pendingApproval.value = null
+        assistantMessage.final = true
+      }
+    }
+  })
+    .then(({ terminalEvent }) => {
+      if (terminalEvent === 'approval_required') return
+
+      pendingApproval.value = null
+      if (!assistantMessageAdded) {
+        ensureAssistantMessage()
+        assistantMessage.content = '已取消本次操作'
+        if (decisionType === 'approve') {
+          assistantMessage.content = '操作已执行完成'
+        }
+        assistantMessage.final = true
+      }
+    })
+    .catch((error) => {
+      if (error.name === 'AbortError') return
+
+      ensureAssistantMessage()
+      if (error.status === 401) {
+        clearExpiredLogin()
+        pendingApproval.value = null
+        assistantMessage.content = '登录状态已过期，请重新登录后再试。'
+        promptLogin('登录状态已过期，请重新登录后继续使用智能助手。')
+      } else if (error.status === 409) {
+        pendingApproval.value = null
+        assistantMessage.content = error.message || '该审批请求已经失效，请重新发起操作。'
+      } else if (
+        error.status === 404 ||
+        error.status >= 500 ||
+        error.name === 'TypeError'
+      ) {
+        pendingApproval.value = approval
+        agentStatus.value = 'offline'
+        assistantMessage.content = '审批请求处理失败，请稍后重试。'
+      } else {
+        pendingApproval.value = approval
+        assistantMessage.content = error.message || '审批请求处理失败，请稍后重试。'
+      }
+      assistantMessage.final = true
+    })
+    .finally(() => {
+      if (requestController !== controller) return
+
+      requestController = null
+      isReplying.value = false
+      isApprovalSubmitting.value = false
+      replyStatus.value = ''
+      if (pendingApproval.value) {
+        updateScrollPosition('ai-approval')
+      } else if (assistantMessageAdded) {
         assistantMessage.final = true
         updateScrollPosition(`ai-message-${assistantMessage.id}`)
       }
@@ -559,15 +1049,21 @@ onMounted(() => {
   nextTick(() => {
     applyStoredEntryPosition()
   })
+  uni.$on('mall4j:open-ai-agent', openChat)
+  checkAgentHealth()
 })
 
 onUnmounted(() => {
+  uni.$off('mall4j:open-ai-agent', openChat)
   finishDrag()
   if (scrollTimer) {
     clearTimeout(scrollTimer)
   }
   if (requestController) {
     requestController.abort()
+  }
+  if (historyController) {
+    historyController.abort()
   }
   if (visible.value && isTabPage()) {
     uni.showTabBar({ animation: false })

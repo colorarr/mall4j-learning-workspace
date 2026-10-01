@@ -10,6 +10,10 @@ class JavaAuthError(Exception):
     """Java 鉴权接口返回失败时抛出的异常。"""
 
 
+class JavaAuthUnavailableError(JavaAuthError):
+    """Java 鉴权服务连接或响应异常。"""
+
+
 @dataclass(frozen=True)
 class UserContext:
     """商城用户鉴权上下文。"""
@@ -62,12 +66,21 @@ class JavaAuthClient:
                     headers=headers,
                 )
         except httpx.HTTPError as exc:
-            raise JavaAuthError("Java auth service is unavailable") from exc
+            raise JavaAuthUnavailableError(
+                "Java auth service is unavailable"
+            ) from exc
 
         try:
             payload: dict[str, Any] = response.json()
         except ValueError as exc:
-            raise JavaAuthError("Invalid response from Java auth service") from exc
+            raise JavaAuthUnavailableError(
+                "Invalid response from Java auth service"
+            ) from exc
+
+        if response.status_code >= 500:
+            raise JavaAuthUnavailableError(
+                "Java auth service returned a server error"
+            )
 
         if response.status_code >= 400:
             raise JavaAuthError("Java auth service rejected the request")

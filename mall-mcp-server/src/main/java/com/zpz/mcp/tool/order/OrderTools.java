@@ -156,7 +156,7 @@ public class OrderTools {
     @McpTool(
             name = "order_cancel",
             title = "取消订单",
-            description = "取消当前登录用户的待付款订单。调用前必须展示目标订单并取得用户明确确认。",
+            description = "取消当前登录用户的待付款订单。目标订单明确后直接调用，系统会在执行前通过审批界面确认。",
             annotations = @McpTool.McpAnnotations(
                     title = "取消订单",
                     readOnlyHint = false,
@@ -185,7 +185,7 @@ public class OrderTools {
     @McpTool(
             name = "order_confirm_receipt",
             title = "确认收货",
-            description = "确认当前登录用户的已发货订单已经收货。调用前必须展示目标订单并取得用户明确确认。",
+            description = "确认当前登录用户的已发货订单已经收货。目标订单明确后直接调用，系统会在执行前通过审批界面确认。",
             annotations = @McpTool.McpAnnotations(
                     title = "确认收货",
                     readOnlyHint = false,
@@ -214,7 +214,7 @@ public class OrderTools {
     @McpTool(
             name = "order_delete_history",
             title = "删除历史订单",
-            description = "删除当前登录用户已完成或已关闭的历史订单。该操作不可逆，调用前必须取得明确确认。",
+            description = "删除当前登录用户已完成或已关闭的历史订单。目标订单明确后直接调用，系统会在执行前通过审批界面确认。",
             annotations = @McpTool.McpAnnotations(
                     title = "删除历史订单",
                     readOnlyHint = false,

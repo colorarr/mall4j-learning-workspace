@@ -1,0 +1,23 @@
+services:
+  mall-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mall-agent
+    restart: unless-stopped
+    cpus: "0.75"
+    mem_limit: 1g
+    network_mode: host
+    env_file:
+      - .env
+    environment:
+      PYTHONUNBUFFERED: "1"
+      CHECKPOINT_BACKEND: "sqlite"
+      LANGGRAPH_SQLITE_PATH: "/data/agent-checkpoints.sqlite"
+    volumes:
+      - ./data:/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:18082/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 5

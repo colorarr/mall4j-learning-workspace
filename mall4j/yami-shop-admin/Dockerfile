@@ -1,4 +1,4 @@
-FROM openjdk:17.0.2
+FROM eclipse-temurin:17-jre-jammy
 
 
 RUN ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
@@ -11,4 +11,4 @@ ADD ./yami-shop-admin/target/yami-shop-admin-0.0.1-SNAPSHOT.jar ./
 
 EXPOSE 8080
 
-CMD java -jar -Xms512m -Xmx512m -Xss256k -XX:SurvivorRatio=8 -Dspring.profiles.active=docker yami-shop-admin-0.0.1-SNAPSHOT.jar
+ENTRYPOINT ["java", "-Xms256m", "-Xmx768m", "-Xss256k", "-XX:SurvivorRatio=8", "-Dspring.profiles.active=docker", "-jar", "yami-shop-admin-0.0.1-SNAPSHOT.jar"]

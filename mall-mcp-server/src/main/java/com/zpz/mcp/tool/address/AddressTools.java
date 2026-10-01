@@ -75,7 +75,7 @@ public class AddressTools {
     @McpTool(
             name = "address_add",
             title = "新增收货地址",
-            description = "为当前登录用户新增收货地址。提交前应向用户复述收货人、手机号和完整地址并确认。",
+            description = "为当前登录用户新增收货地址。收货信息完整后直接调用。",
             annotations = @McpTool.McpAnnotations(
                     title = "新增收货地址",
                     readOnlyHint = false,
@@ -101,7 +101,7 @@ public class AddressTools {
     @McpTool(
             name = "address_update",
             title = "修改收货地址",
-            description = "修改当前登录用户的收货地址。addressId必填，提交前必须让用户确认修改后的完整信息。",
+            description = "修改当前登录用户的收货地址。addressId和修改后的完整信息明确后直接调用。",
             annotations = @McpTool.McpAnnotations(
                     title = "修改收货地址",
                     readOnlyHint = false,
@@ -130,7 +130,7 @@ public class AddressTools {
     @McpTool(
             name = "address_delete",
             title = "删除收货地址",
-            description = "删除当前登录用户的一条非默认收货地址。该操作不可逆，调用前必须确认。",
+            description = "删除当前登录用户的一条非默认收货地址。目标地址明确后直接调用，系统会在执行前通过审批界面确认。",
             annotations = @McpTool.McpAnnotations(
                     title = "删除收货地址",
                     readOnlyHint = false,
@@ -155,7 +155,7 @@ public class AddressTools {
     @McpTool(
             name = "address_set_default",
             title = "设置默认地址",
-            description = "将当前登录用户的一条收货地址设为默认地址。",
+            description = "将当前登录用户的一条收货地址设为默认地址。目标地址明确后直接调用。",
             annotations = @McpTool.McpAnnotations(
                     title = "设置默认地址",
                     readOnlyHint = false,
